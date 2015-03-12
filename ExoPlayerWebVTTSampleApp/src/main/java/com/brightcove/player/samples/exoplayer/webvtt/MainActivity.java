@@ -1,5 +1,12 @@
-package com.brightcove.player.samples.exoplayer.basic;
+package com.brightcove.player.samples.exoplayer.webvtt;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import android.media.MediaFormat;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -11,10 +18,13 @@ import com.brightcove.player.view.ExoPlayerVideoView;
 
 /**
  * This app illustrates how to use the ExoPlayer with the Brightcove
- * Native Player SDK for Android.
+ * Native Player SDK for Android and Web-VTT Captions.
  *
- * @author Billy Hnath (bhnath@brightcove.com)
- * @author JIm Whisenant (added test data)
+ * @author Paul Matthew Reilly (original code, based on Github history)
+ * @author Jim Whisenant (
+ *          adapted this example from WebVTTSampleApp
+ *          added test data
+ *          added a WIP Task to retrieve captions instead of load them from the local filesystem)
  */
 public class MainActivity extends BrightcovePlayer {
 
@@ -30,8 +40,8 @@ public class MainActivity extends BrightcovePlayer {
         brightcoveVideoView = (ExoPlayerVideoView) findViewById(R.id.brightcove_video_view);
         super.onCreate(savedInstanceState);
 
-        // HLS HTTPs URL
-        String hlsHTTPSURLSecureSegments = "http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=3520544323001&pubId=252362759&lineupId=&affiliateId=";
+        // HLSe URL
+        String hlseURLSecureSegments = "http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=3520544323001&pubId=252362759&lineupId=&affiliateId=";
 
 
         String dashBCOVSampleURL = "http://brightcove.vo.llnwd.net/o2/unsecured/media/1232842446001/201408/3393/1232842446001_3721640754001_1687-ColoCribs-Aug8-a.mpd";
@@ -75,18 +85,15 @@ public class MainActivity extends BrightcovePlayer {
         // HLS, multiple renditions
         String hlsOnlyMultiRenditionReferenceId = "66sec-multi-rendition-with-audio-rendition";
 
-        // HLS, segments served over https
+        // HLSe, segments served over https
         String hlsHTTPSReferenceId = "kungfu-secure";
-
-        // HLSe
-        String hlsEncryptedReferenceId = "punisher_hls_encrypted";
 
         // MP4, multiple renditions
         String mp4OnlyMultiRenditionReferenceId = "75sec-mp4-multi-rendition";
 
         // Add a test video to the BrightcoveVideoView.
-        Catalog catalog = new Catalog(hlsOnlyAPIToken);
-        catalog.findVideoByReferenceID(hlsOnlyMultiRenditionReferenceId, new VideoListener() {
+        Catalog catalog = new Catalog(mp4OnlyAPIToken);
+        catalog.findVideoByReferenceID(mp4OnlyMultiRenditionReferenceId, new VideoListener() {
             @Override
             public void onVideo(Video video) {
                 brightcoveVideoView.add(video);
@@ -98,11 +105,51 @@ public class MainActivity extends BrightcovePlayer {
             }
         });
 
+        setUpVTTCaptions();
+
         // Log whether or not instance state in non-null.
         if (savedInstanceState != null) {
             Log.v(TAG, "Restoring saved position");
         } else {
             Log.v(TAG, "No saved state");
         }
+    }
+
+    private void setUpVTTCaptions() {
+
+        new RetrieveCaptionsTask().execute("http://solutions.brightcove.com/jwhisenant/testpages/captions/vtt/bc_smart_en-76sec.vtt");
+
+            MediaFormat mediaFormat = MediaFormat.createSubtitleFormat("text/vtt", "en");
+            brightcoveVideoView.addSubtitleSource(new RetrieveCaptionsTask().captionsInputStream, mediaFormat);
+
+    }
+}
+
+class RetrieveCaptionsTask extends AsyncTask<String, Void, InputStream> {
+
+    private Exception exception;
+    URL captionsUrl;
+    InputStream captionsInputStream;
+
+    protected InputStream doInBackground(String... urls) {
+        try {
+            URL captionsUrl = new URL(urls[0]);
+            captionsInputStream = captionsUrl.openStream();
+            return captionsUrl.openStream();
+        } catch (Exception e) {
+            this.exception = e;
+            if (e instanceof MalformedURLException) {
+                Log.v(this.getClass().getSimpleName(), "Could not retrieve captions.");
+            } else if (e instanceof IOException) {
+                Log.v(this.getClass().getSimpleName(), "Could not set up an InputStream from the retrieved captions.");
+            } else if (e instanceof NullPointerException) {
+                Log.v(this.getClass().getSimpleName(), "Captions stream URL was null");
+            }
+            return null;
+        }
+    }
+
+    protected void onPostExecute(InputStream stream) {
+
     }
 }

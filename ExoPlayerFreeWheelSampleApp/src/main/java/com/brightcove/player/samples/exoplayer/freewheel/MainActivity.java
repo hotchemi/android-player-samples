@@ -159,5 +159,20 @@ public class MainActivity extends BrightcovePlayer {
             }
         });
         freeWheelController.enable();
+
+        eventEmitter.on(FreeWheelEventType.DID_LOAD_AD_MANAGER, new EventListener() {
+            @Override
+            public void processEvent(Event event) {
+                Log.v(TAG, "Loaded the Freewheel Ad Manager");
+            }
+        });
+
+        eventEmitter.on(FreeWheelEventType.DID_SUBMIT_AD_REQUEST, new EventListener() {
+            @Override
+            public void processEvent(Event event) {
+                Log.v(TAG, "Submitted the Freewheel Ad Request");
+            }
+        });
+
     }
 }

@@ -36,7 +36,9 @@ import java.util.Map;
  * This app illustrates how to use the ExoPlayer and IMA with the Brightcove
  * Native Player SDK for Android.
  *
- * @author Jim Whisenant (jwhisenant@brightcove.com)
+ * @author Paul Matthew Reilly (original code)
+ * @author Paul Michael Reilly (added explanatory comments)
+ * @author Jim Whisenant (adapted this example from BasicIMASampleApp, and added test data)
  */
 public class MainActivity extends BrightcovePlayer {
 
@@ -124,16 +126,16 @@ public class MainActivity extends BrightcovePlayer {
             "http://pubads.g.doubleclick.net/gampad/ads?sz=400x300&iu=%2F6062%2Fhanna_MA_group%2Fvideo_comp_app&ciu_szs=&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&m_ast=vast&url=[referrer_url]&correlator=[timestamp]"
 
             // Plato running locally, valid VAST response
-//            "http://192.168.1.9:9090/formats/IMA3/responses/local-mp4-response.handlebars"
+//            "http://192.168.1.10:9090/formats/IMA3/responses/local-mp4-response.handlebars"
 
             // Plato running at xiappsci.vidmark.local, valid VAST response
             // "http://xiappsci.vidmark.local:9090/formats/IMA3/responses/local-mp4-response.handlebars"
 
             // Plato running locally, empty VAST response
-//            "http://192.168.1.9:9090/formats/IMA3/responses/empty.handlebars"
+//            "http://192.168.1.10:9090/formats/IMA3/responses/empty.handlebars"
 
             // Plato running locally, 30-second server timeout
-//            "http://192.168.1.9:9090/formats/IMA3/responses/local-mp4-response.handlebars?sleep=30000"
+//            "http://192.168.1.10:9090/formats/IMA3/responses/local-mp4-response.handlebars?sleep=30000"
 
     };
 
@@ -142,6 +144,8 @@ public class MainActivity extends BrightcovePlayer {
      * abastraction for the Google IMA Plugin setup code.
      */
     private void setupCuePoints(Source source) {
+
+        Log.v(TAG, "Setting up Cue Points");
         String cuePointType = "ad";
         Map<String, Object> properties = new HashMap<String, Object>();
         Map<String, Object> details = new HashMap<String, Object>();
@@ -156,7 +160,7 @@ public class MainActivity extends BrightcovePlayer {
         // midroll at 10 seconds.
         // Due HLS bugs in the Android MediaPlayer, midrolls are not supported.
         if (!source.getDeliveryType().equals(DeliveryType.HLS)) {
-            cuePoint = new CuePoint(10 * (int) DateUtils.SECOND_IN_MILLIS, cuePointType, properties);
+            cuePoint = new CuePoint(20 * (int) DateUtils.SECOND_IN_MILLIS, cuePointType, properties);
             details.put(Event.CUE_POINT, cuePoint);
             eventEmitter.emit(EventType.SET_CUE_POINT, details);
         }
@@ -165,6 +169,7 @@ public class MainActivity extends BrightcovePlayer {
         cuePoint = new CuePoint(CuePoint.PositionType.AFTER, cuePointType, properties);
         details.put(Event.CUE_POINT, cuePoint);
         eventEmitter.emit(EventType.SET_CUE_POINT, details);
+        Log.v(TAG, "Done setting up Cue Points");
     }
 
     /**

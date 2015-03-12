@@ -1,4 +1,4 @@
-package com.brightcove.player.samples.ima.adrules;
+package com.brightcove.player.samples.exoplayer.ima.adrules;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -15,6 +15,7 @@ import com.brightcove.player.media.VideoListener;
 import com.brightcove.player.model.Video;
 import com.brightcove.player.view.BrightcovePlayer;
 import com.brightcove.player.view.BrightcoveVideoView;
+import com.brightcove.player.view.ExoPlayerVideoView;
 import com.brightcove.player.util.StringUtil;
 import com.google.ads.interactivemedia.v3.api.AdDisplayContainer;
 import com.google.ads.interactivemedia.v3.api.AdsRequest;
@@ -32,6 +33,7 @@ import java.util.Map;
  *
  * @author Paul Matthew Reilly (original code)
  * @author Paul Michael Reilly (added explanatory comments)
+ * @author Jim Whisenant (adapted this example from the AdRulesIMASampleApp, and added test data)
  */
 public class MainActivity extends BrightcovePlayer {
 
@@ -39,11 +41,25 @@ public class MainActivity extends BrightcovePlayer {
 
     private EventEmitter eventEmitter;
     private GoogleIMAComponent googleIMAComponent;
-    private String adRulesURL = "http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=%2F15018773%2Feverything2&ciu_szs=300x250%2C468x60%2C728x90&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=dummy&correlator=[timestamp]&cmsid=133&vid=10XWSh7W4so&ad_rule=1";
 
-    // Local ad server simulator data
-    private String platoUrlBase = "http://192.168.1.10:9090";
-    private String platoAdRulesURL = platoUrlBase + "/formats/IMA3/combined/pre-mid-post-playlist.handlebars";
+    // Ad server test data
+    private String googleAdRulesURL = "http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=%2F15018773%2Feverything2&ciu_szs=300x250%2C468x60%2C728x90&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=dummy&correlator=[timestamp]&cmsid=133&vid=10XWSh7W4so&ad_rule=1";
+
+    // Be sure to set this variable to point at your local Plato instance
+    private String platoURLBase = "http://192.168.1.10:9090";
+    private String platoPrerollOnlyVMAP = platoURLBase + "/formats/IMA3/preroll/local-mp4-only-playlist.handlebars";
+    private String platoMidrollOnlyVMAP = platoURLBase + "/formats/IMA3/midroll/local-mp4-playlist.handlebars";
+    private String platoPostrollOnlyVMAP = platoURLBase + "/formats/IMA3/postroll/local-mp4-playlist.handlebars";
+    private String platoSinglePreMidPostrollVMAP = platoURLBase + "/formats/IMA3/combined/pre-mid-post-playlist.handlebars";
+    private String platoDoublePreMidPostrollVMAP = platoURLBase + "/formats/IMA3/combined/double-pre-mid-post-playlist.handlebars";
+
+    // HLS Account test data
+    private String hlsAccountApiToken = "UV3EUeje-jlI5sUpJAGsDZ2jki26BZl78pRKemVDxNTXAxyVOabPdA..";
+    private String hlsMultiRenditionReferenceId = "positive_path_kung_fu_panda";
+
+    // MP4 Account test data
+    private String mp4AccountApiToken = "ZUPNyrUqRdcAtjytsjcJplyUc9ed8b0cD_eWIe36jXqNWKzIcE6i8A..";
+    private String mp4MultiRenditionReferenceId = "75sec-mp4-multi-rendition";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +67,7 @@ public class MainActivity extends BrightcovePlayer {
         // entering the superclass. This allows for some stock video player lifecycle
         // management.
         setContentView(R.layout.ima_activity_main);
-        brightcoveVideoView = (BrightcoveVideoView) findViewById(R.id.brightcove_video_view);
+        brightcoveVideoView = (ExoPlayerVideoView) findViewById(R.id.brightcove_video_view);
         super.onCreate(savedInstanceState);
         eventEmitter = brightcoveVideoView.getEventEmitter();
 
@@ -63,14 +79,14 @@ public class MainActivity extends BrightcovePlayer {
         values.remove(VideoFields.HLS_URL);
         options.put("video_fields", StringUtil.join(values, ","));
 
-        Catalog catalog = new Catalog("ErQk9zUeDVLIp8Dc7aiHKq8hDMgkv5BFU7WGshTc-hpziB3BuYh28A..");
-        catalog.findVideoByReferenceID("shark", new VideoListener() {
+        Catalog catalog = new Catalog(mp4AccountApiToken);
+        catalog.findVideoByReferenceID(mp4MultiRenditionReferenceId, new VideoListener() {
             public void onVideo(Video video) {
                 brightcoveVideoView.add(video);
 
                 // Auto play: the GoogleIMAComponent will postpone
                 // playback until the Ad Rules are loaded.
-                brightcoveVideoView.start();
+                // brightcoveVideoView.start();
             }
 
             public void onError(String error) {
@@ -124,7 +140,7 @@ public class MainActivity extends BrightcovePlayer {
                 // Build an ads request object and point it to the ad
                 // display container created above.
                 AdsRequest adsRequest = sdkFactory.createAdsRequest();
-                adsRequest.setAdTagUrl(adRulesURL);
+                adsRequest.setAdTagUrl(platoSinglePreMidPostrollVMAP);
                 adsRequest.setAdDisplayContainer(container);
 
                 ArrayList<AdsRequest> adsRequests = new ArrayList<AdsRequest>(1);
